@@ -13,8 +13,8 @@ spec:
         app: node-app
     spec:
       containers:
-      - name: my-node-app
-        image: node-app:v1
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 3000
+        - name: node-app-container
+          image: gopikrishna09/node-app:IMAGE_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
