@@ -52,8 +52,8 @@ pipeline {
                 bat """
                 powershell -Command "(Get-Content k8s\\deployment.yaml) -replace 'IMAGE_TAG', '%BUILD_NUMBER%' | Set-Content k8s\\deployment.yaml"
                 minikube image load %DOCKER_IMAGE%:%BUILD_NUMBER%
-                kubectl apply -f k8s\deployment.yaml
-                kubectl apply -f k8s\service.yaml
+                kubectl apply -f k8s\\deployment.yaml
+                kubectl apply -f k8s\\service.yaml
                 """
             }
         }
