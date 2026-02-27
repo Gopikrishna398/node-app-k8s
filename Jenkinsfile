@@ -47,14 +47,19 @@ pipeline {
         stage('Start Minikube if not running') {
             steps {
                 bat """
-                minikube status | findstr "Running"
-                IF %ERRORLEVEL% NEQ 0 (
-                    echo Minikube not running. Starting now...
-                    minikube start --driver=docker --memory=2048 --cpus=2
-                )
+                minikube status
+IF %ERRORLEVEL% NEQ 0 (
+    echo Minikube not running. Starting now...
+    minikube start --driver=docker --memory=2048 --cpus=2
+)
                 """
             }
         }
+        stage('Wait for Kubernetes') {
+    steps {
+        bat 'kubectl wait --for=condition=Ready nodes --all --timeout=120s'
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
