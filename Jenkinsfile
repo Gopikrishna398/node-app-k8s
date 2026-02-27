@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     environment {
         DOCKER_IMAGE = "gopikrishna09/node-app"
         CONTAINER_NAME = "my-k8s-app"
@@ -30,44 +31,41 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'dockerhub-creds',
-            usernameVariable: 'DOCKER_USER',
-            passwordVariable: 'DOCKER_PASS'
-        )]) {
-            bat """
-            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-            docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
-            """
-        }
-    }
-}
-
-        stage('Start Minikube if not running') {
             steps {
-                bat """
-                minikube status
-IF %ERRORLEVEL% NEQ 0 (
-    echo Minikube not running. Starting now...
-    minikube start --driver=docker --memory=2048 --cpus=2
-)
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat """
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
+                    """
+                }
             }
         }
+
+        stage('Start Minikube') {
+            steps {
+                bat 'minikube start --driver=docker --memory=2048 --cpus=2'
+            }
+        }
+
         stage('Wait for Kubernetes') {
-    steps {
-        bat 'kubectl wait --for=condition=Ready nodes --all --timeout=120s'
-    }
-}
+            steps {
+                bat 'kubectl wait --for=condition=Ready nodes --all --timeout=120s'
+                bat 'kubectl cluster-info'
+                bat 'kubectl get nodes'
+            }
+        }
 
         stage('Deploy to Kubernetes') {
             steps {
                 bat """
                 powershell -Command "(Get-Content k8s\\deployment.yaml) -replace 'IMAGE_TAG', '%BUILD_NUMBER%' | Set-Content k8s\\deployment.yaml"
                 minikube image load %DOCKER_IMAGE%:%BUILD_NUMBER%
-                kubectl apply -f k8s\\deployment.yaml
-                kubectl apply -f k8s\\service.yaml
+                kubectl apply -f k8s\\deployment.yaml --validate=false
+                kubectl apply -f k8s\\service.yaml --validate=false
                 """
             }
         }
