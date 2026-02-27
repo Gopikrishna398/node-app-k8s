@@ -30,10 +30,19 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            steps {
-                bat "docker push %DOCKER_IMAGE%:%BUILD_NUMBER%"
-            }
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS'
+        )]) {
+            bat """
+            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+            docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
+            """
         }
+    }
+}
 
         stage('Start Minikube if not running') {
             steps {
