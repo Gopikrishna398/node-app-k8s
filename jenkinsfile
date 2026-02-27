@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    environment {
+        DOCKER_IMAGE = "gopikrishna09/node-app"
+        CONTAINER_NAME = "my-k8s-app"
+    }
 
     stages {
 
@@ -19,15 +23,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 bat """
-                docker build -t my-k8s-app:%BUILD_NUMBER% .
-                docker tag my-k8s-app:%BUILD_NUMBER% gopikrishna09/node-app:%BUILD_NUMBER%
+                docker build -t %CONTAINER_NAME%:%BUILD_NUMBER% .
+                docker tag %CONTAINER_NAME%:%BUILD_NUMBER% %DOCKER_IMAGE%:%BUILD_NUMBER%
                 """
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                bat "docker push gopikrishna09/node-app:%BUILD_NUMBER%"
+                bat "docker push %DOCKER_IMAGE%:%BUILD_NUMBER%"
             }
         }
 
@@ -47,9 +51,9 @@ pipeline {
             steps {
                 bat """
                 powershell -Command "(Get-Content k8s\\deployment.yaml) -replace 'IMAGE_TAG', '%BUILD_NUMBER%' | Set-Content k8s\\deployment.yaml"
-                minikube image load gopikrishna09/node-app:%BUILD_NUMBER%
-                kubectl apply -f k8s\\deployment.yaml
-                kubectl apply -f k8s\\service.yaml
+                minikube image load %DOCKER_IMAGE%:%BUILD_NUMBER%
+                kubectl apply -f k8s\deployment.yaml
+                kubectl apply -f k8s\service.yaml
                 """
             }
         }
