@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "gopikrishna09/node-app"
-        CONTAINER_NAME = "my-k8s-app"
+        CONTAINER_NAME = "minikube"
     }
 
     stages {
