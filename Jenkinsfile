@@ -21,16 +21,7 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                bat """
-                docker build -t %CONTAINER_NAME%:%BUILD_NUMBER% .
-                docker tag %CONTAINER_NAME%:%BUILD_NUMBER% %DOCKER_IMAGE%:%BUILD_NUMBER%
-                """
-            }
-        }
-
-        stage('Push Docker Image') {
+               stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
@@ -39,11 +30,20 @@ pipeline {
                 )]) {
                     bat """
                     echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                    docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
                     """
                 }
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                bat """
+                docker build -t %DOCKER_IMAGE%:%BUILD_NUMBER% .
+                docker tag %DOCKER_IMAGE%:%BUILD_NUMBER% %DOCKER_IMAGE%:latest
+                """
+            }
+        }
+
 
         stage('Start Minikube') {
             steps {
